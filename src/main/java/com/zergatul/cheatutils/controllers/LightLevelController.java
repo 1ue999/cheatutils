@@ -3,10 +3,12 @@ package com.zergatul.cheatutils.controllers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.datafixers.util.Pair;
+import com.mojang.math.Matrix4f;
+import com.zergatul.cheatutils.ModMain;
 import com.zergatul.cheatutils.configs.ConfigStore;
 import com.zergatul.cheatutils.configs.LightLevelConfig;
 import com.zergatul.cheatutils.utils.Dimension;
-import com.zergatul.cheatutils.wrappers.ModApiWrapper;
+import com.zergatul.cheatutils.utils.GuiUtils;
 import com.zergatul.cheatutils.wrappers.events.RenderWorldLastEvent;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -44,6 +46,9 @@ public class LightLevelController {
     private VertexBuffer vertexBuffer;
 
     private LightLevelController() {
+        for (int i = 0; i < 16; i++) {
+            textures[i] = new ResourceLocation(ModMain.MODID, "textures/light-level-" + i + ".png");
+        }
 
         RenderSystem.recordRenderCall(() -> vertexBuffer = new VertexBuffer());
 
@@ -94,14 +99,19 @@ public class LightLevelController {
 
         Vec3 view = mc.gameRenderer.getMainCamera().getPosition();
 
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bufferBuilder = tesselator.getBuilder();
-
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glDepthMask(true);
+        RenderSystem.enableDepthTest();
+        //RenderSystem.disableDepthTest();
+        RenderSystem.enableCull();
         RenderSystem.enableBlend();
+        /*RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);*/
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        PoseStack matrix = event.getMatrixStack();
+        matrix.pushPose();
+        //matrix.translate(-view.x, -view.y, -view.z);
+        //vertexBuffer.drawWithShader(matrix.last().pose(), event.getProjectionMatrix().copy(), shader);
+
 
         double maxDistance2 = config.maxDistance * config.maxDistance;
 
@@ -143,14 +153,49 @@ public class LightLevelController {
                 listTracers.add(pos);
             }
             if (config.showLightLevelValue) {
-                RenderSystem.setShaderTexture(0, null);
+                RenderSystem.setShaderTexture(0, textures[blockLight]);
+                float y = (float)(pos.getY() + 0.05 - view.y);
+                /*GuiUtils.drawTexture(event.getMatrixStack().last().pose(),
+                        -ImageSize / 2f + (xp - xc) * multiplier, -ImageSize / 2f + (zp - zc) * multiplier,
+                        ImageSize, ImageSize, getTranslateZ() + 4, 0, 0, ImageSize, ImageSize, ImageSize, ImageSize);*/
+                float x1 = (float)(pos.getX() + 0.05 - view.x);
+                float z1 = (float)(pos.getZ() + 0.05 - view.z);
+                float x2 = x1 + 0.9f;
+                float z2 = z1 + 0.9f;
+                BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+                bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+                bufferBuilder.vertex(x1, y, z1).uv(0, 0).endVertex();
+                bufferBuilder.vertex(x1, y, z2).uv(0, 1).endVertex();
+                bufferBuilder.vertex(x2, y, z2).uv(1, 1).endVertex();
+                bufferBuilder.vertex(x2, y, z1).uv(1, 0).endVertex();
+
+                vertexBuffer.bind();
+                vertexBuffer.upload(bufferBuilder.end());
+
+                PoseStack poseStack = event.getMatrixStack();
+                poseStack.pushPose();
+                vertexBuffer.drawWithShader(poseStack.last().pose(), event.getProjectionMatrix().copy(), GameRenderer.getPositionTexShader());
+                poseStack.popPose();
+
+                VertexBuffer.unbind();
             }
         }
+
+        matrix.popPose();
+
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder bufferBuilder = tesselator.getBuilder();
+
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glDepthMask(true);
+        RenderSystem.enableBlend();
+
+        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         vertexBuffer.bind();
         vertexBuffer.upload(bufferBuilder.end());
 
-        PoseStack matrix = event.getMatrixStack();
+        matrix = event.getMatrixStack();
         matrix.pushPose();
         matrix.translate(-view.x, -view.y, -view.z);
         var shader = GameRenderer.getPositionColorShader();

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
@@ -33,6 +34,7 @@ public class LightLevelController {
     public static final LightLevelController instance = new LightLevelController();
 
     private final Minecraft mc = Minecraft.getInstance();
+    private final ResourceLocation[] textures = new ResourceLocation[16];
     private final Object loopWaitEvent = new Object();
     private final Thread eventLoop;
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
@@ -113,9 +115,9 @@ public class LightLevelController {
                 continue;
             }
             int blockLight = mc.level.getBrightness(LightLayer.BLOCK, pos);
-            int skyLight = mc.level.getBrightness(LightLayer.SKY, pos);
+            //int skyLight = mc.level.getBrightness(LightLayer.SKY, pos);
             if (blockLight == 0) {
-                float r, g, b;
+                /*float r, g, b;
                 if (skyLight == 0) {
                     // can spawn any time
                     r = 1f;
@@ -139,6 +141,9 @@ public class LightLevelController {
                 bufferBuilder.vertex(x2, y, z1).color(r, g, b, 0.2f).endVertex();*/
 
                 listTracers.add(pos);
+            }
+            if (config.showLightLevelValue) {
+                RenderSystem.setShaderTexture(0, null);
             }
         }
 
@@ -203,8 +208,10 @@ public class LightLevelController {
 
             for (BlockPos pos: listTracers) {
                 double y = pos.getY() + 0.05 - view.y;
-                buffer.vertex(tracerX - view.x, tracerY - view.y, tracerZ - view.z).color(1f, 1f, 1f, 0.5f).endVertex();
-                buffer.vertex(pos.getX() + 0.5 - view.x, y, pos.getZ() + 0.5 - view.z).color(1f, 1f, 1f, 0.5f).endVertex();
+                if (config.showTracers) {
+                    buffer.vertex(tracerX - view.x, tracerY - view.y, tracerZ - view.z).color(1f, 1f, 1f, 0.5f).endVertex();
+                    buffer.vertex(pos.getX() + 0.5 - view.x, y, pos.getZ() + 0.5 - view.z).color(1f, 1f, 1f, 0.5f).endVertex();
+                }
 
                 double x1 = pos.getX() + 0.05 - view.x;
                 double z1 = pos.getZ() + 0.05 - view.z;
@@ -346,6 +353,9 @@ public class LightLevelController {
 
     private void checkBlock(ChunkAccess chunk, BlockPos pos, HashSet<BlockPos> set) {
         BlockState state = chunk.getBlockState(pos);
+        if (!state.canOcclude()) {
+            return;
+        }
         if (state.getMaterial().isSolid() && state.isCollisionShapeFullBlock(mc.level, pos)) {
             BlockPos posAbove = pos.above();
             BlockState stateAbove = chunk.getBlockState(posAbove);
@@ -367,5 +377,4 @@ public class LightLevelController {
             set.add(posAbove);
         }
     }
-
 }

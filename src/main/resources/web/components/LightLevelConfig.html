@@ -24,6 +24,22 @@
             </label>
         </div>
         <div>
+            <label class="switch-label">
+                <input type="checkbox" class="switch"
+                       v-model="config.showTracers"
+                       @change="update()">
+                <span>Show Tracers</span>
+            </label>
+        </div>
+        <div>
+            <label class="switch-label">
+                <input type="checkbox" class="switch"
+                       v-model="config.showLightLevelValue"
+                       @change="update()">
+                <span>Show Light Level Value</span>
+            </label>
+        </div>
+        <div>
             <span class="text">Max Range:</span>
             <input type="text" v-model="config.maxDistance" @change="update()">
         </div>

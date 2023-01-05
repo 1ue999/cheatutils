@@ -3,31 +3,33 @@ package com.zergatul.cheatutils.controllers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.math.Matrix4f;
 import com.zergatul.cheatutils.ModMain;
 import com.zergatul.cheatutils.configs.ConfigStore;
 import com.zergatul.cheatutils.configs.LightLevelConfig;
 import com.zergatul.cheatutils.utils.Dimension;
-import com.zergatul.cheatutils.utils.GuiUtils;
 import com.zergatul.cheatutils.wrappers.ModApiWrapper;
 import com.zergatul.cheatutils.wrappers.events.RenderWorldLastEvent;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
@@ -39,6 +41,7 @@ public class LightLevelController {
     public static final LightLevelController instance = new LightLevelController();
 
     private final Minecraft mc = Minecraft.getInstance();
+    private final Logger logger = LogManager.getLogger(LightLevelController.class);
     private final ResourceLocation[] textures = new ResourceLocation[16];
     private final Object loopWaitEvent = new Object();
     private final Thread eventLoop;
@@ -73,7 +76,6 @@ public class LightLevelController {
         ChunkController.instance.addOnChunkUnLoadedHandler(this::onChunkUnLoaded);
         ChunkController.instance.addOnBlockChangedHandler(this::onBlockChanged);
 
-
         eventLoop = new Thread(() -> {
             try {
                 while (true) {
@@ -89,6 +91,9 @@ public class LightLevelController {
             }
             catch (InterruptedException e) {
                 // do nothing
+            }
+            catch (Throwable e) {
+                logger.error("LightLevelController scan thread crash.", e);
             }
         });
 
@@ -160,12 +165,7 @@ public class LightLevelController {
 
                 vertexBuffer.bind();
                 vertexBuffer.upload(bufferBuilder.end());
-
-                PoseStack poseStack = event.getMatrixStack();
-                poseStack.pushPose();
-                vertexBuffer.drawWithShader(poseStack.last().pose(), event.getProjectionMatrix().copy(), GameRenderer.getPositionTexShader());
-                poseStack.popPose();
-
+                vertexBuffer.drawWithShader(event.getMatrixStack().last().pose(), event.getProjectionMatrix().copy(), GameRenderer.getPositionTexShader());
                 VertexBuffer.unbind();
             }
         }
@@ -175,7 +175,7 @@ public class LightLevelController {
         double tracerY = tracerCenter.y;
         double tracerZ = tracerCenter.z;
 
-        var buffer = Tesselator.getInstance().getBuilder();
+        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (BlockPos pos: listTracers) {
@@ -199,9 +199,6 @@ public class LightLevelController {
             buffer.vertex(x1, y, z1).color(1f, 1f, 1f, 0.5f).endVertex();
         }
 
-        vertexBuffer.bind();
-        vertexBuffer.upload(buffer.end());
-
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
@@ -210,11 +207,9 @@ public class LightLevelController {
         RenderSystem.disableDepthTest();
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
 
-        PoseStack poseStack = event.getMatrixStack();
-        poseStack.pushPose();
-        vertexBuffer.drawWithShader(poseStack.last().pose(), event.getProjectionMatrix().copy(), GameRenderer.getPositionColorShader());
-        poseStack.popPose();
-
+        vertexBuffer.bind();
+        vertexBuffer.upload(buffer.end());
+        vertexBuffer.drawWithShader(event.getMatrixStack().last().pose(), event.getProjectionMatrix().copy(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
 
         RenderSystem.depthMask(true);
@@ -323,11 +318,7 @@ public class LightLevelController {
     }
 
     private void checkBlock(ChunkAccess chunk, BlockPos pos, HashSet<BlockPos> set) {
-        BlockState state = chunk.getBlockState(pos);
-        if (!state.canOcclude()) {
-            return;
-        }
-        if (state.getMaterial().isSolid() && state.isCollisionShapeFullBlock(mc.level, pos)) {
+        if (canSpawnOn(chunk.getBlockState(pos), pos)) {
             BlockPos posAbove = pos.above();
             BlockState stateAbove = chunk.getBlockState(posAbove);
             if (stateAbove.getMaterial().isSolid()) {
@@ -349,9 +340,23 @@ public class LightLevelController {
         }
     }
 
-    private boolean canSpawn(BlockState state, BlockPos pos) {
-        if (state.getBlock() instanceof SlabBlock slabBlock) {
-
+    private boolean canSpawnOn(BlockState state, BlockPos pos) {
+        if (state.getBlock() instanceof SlabBlock) {
+            return state.getValue(SlabBlock.TYPE) != SlabType.BOTTOM;
         }
+
+        if (state.getBlock() instanceof StairBlock) {
+            return state.getValue(StairBlock.HALF) == Half.TOP;
+        }
+
+        if (!state.canOcclude()) {
+            return false;
+        }
+
+        if (state.getBlock() == Blocks.BEDROCK) {
+            return false;
+        }
+
+        return state.getMaterial().isSolid() && state.isCollisionShapeFullBlock(mc.level, pos);
     }
 }

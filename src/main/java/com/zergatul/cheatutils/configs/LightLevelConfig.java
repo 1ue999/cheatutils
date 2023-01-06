@@ -6,6 +6,7 @@ public class LightLevelConfig {
     public boolean display;
     public boolean showTracers;
     public boolean showLightLevelValue;
+    public boolean useFreeCamPosition;
     public float maxDistance;
 
     public LightLevelConfig() {

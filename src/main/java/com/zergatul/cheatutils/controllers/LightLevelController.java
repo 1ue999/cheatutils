@@ -135,13 +135,15 @@ public class LightLevelController {
         float[] v = texRot.getSecond();
 
         double maxDistance2 = config.maxDistance * config.maxDistance;
+        double xc = config.useFreeCamPosition ? view.x : mc.player.getX();
+        double yc = config.useFreeCamPosition ? view.y : mc.player.getY();
+        double zc = config.useFreeCamPosition ? view.z : mc.player.getZ();
 
         List<BlockPos> listTracers = new ArrayList<>();
-
         for (BlockPos pos: getBlockForRendering()) {
-            double dx = mc.player.getX() - pos.getX();
-            double dy = mc.player.getY() - pos.getY();
-            double dz = mc.player.getZ() - pos.getZ();
+            double dx = xc - pos.getX();
+            double dy = yc - pos.getY();
+            double dz = zc - pos.getZ();
             if (dx * dx + dy * dy + dz * dz > maxDistance2) {
                 continue;
             }

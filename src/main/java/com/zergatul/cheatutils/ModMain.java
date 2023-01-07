@@ -30,7 +30,6 @@ public class ModMain {
 
         register(KeyBindingsController.instance);
         register(ChunkController.instance);
-        register(RenderController.instance);
         register(NetworkPacketsController.instance);
         register(TeleportController.instance);
         register(AutoTotemController.instance);
@@ -43,6 +42,10 @@ public class ModMain {
         register(LockInputsController.instance);
         register(AutoCraftController.instance);
         register(WorldScannerController.instance);
+        register(BlockEspController.instance);
+        register(EntityEspController.instance);
+        register(EnderPearlPathController.instance);
+        register(EndCityChunksController.instance);
     }
 
     private void register(Object instance) {

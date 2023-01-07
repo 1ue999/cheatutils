@@ -1,6 +1,7 @@
 package com.zergatul.cheatutils.controllers;
 
 import com.zergatul.cheatutils.chunkoverlays.ExplorationMiniMapChunkOverlay;
+import com.zergatul.cheatutils.chunkoverlays.NewChunksOverlay;
 import net.minecraft.client.Minecraft;
 import org.slf4j.helpers.MessageFormatter;
 
@@ -31,6 +32,11 @@ public class DebugScreenController {
         list.add(String.format("ExplMiniMap scan thread: queue size=%s; state=%s;",
                 miniMapChunkOverlay.getScanningQueueCount(),
                 miniMapChunkOverlay.getThreadState()));
+
+        NewChunksOverlay newChunksOverlay = ChunkOverlayController.instance.ofType(NewChunksOverlay.class);
+        list.add(String.format("NewChunks scan thread: queue size=%s; state=%s;",
+                newChunksOverlay.getScanningQueueCount(),
+                newChunksOverlay.getThreadState()));
 
         FreeCamController.instance.onDebugScreenGetGameInformation(list);
     }

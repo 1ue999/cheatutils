@@ -83,7 +83,6 @@ public class BeaconController {
             RenderSystem.setProjectionMatrix(getProjectionMatrix(fov));
             // bob/hurt views?
 
-            RenderSystem.depthMask(false);
             RenderSystem.disableCull();
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
@@ -100,7 +99,6 @@ public class BeaconController {
 
             VertexBuffer.unbind();
 
-            RenderSystem.depthMask(true);
             RenderSystem.disableBlend();
             RenderSystem.enableCull();
             RenderSystem.enableTexture();

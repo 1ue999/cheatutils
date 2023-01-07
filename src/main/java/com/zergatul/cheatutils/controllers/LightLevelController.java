@@ -205,7 +205,6 @@ public class LightLevelController {
             }
         }
 
-        RenderSystem.depthMask(false);
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -218,7 +217,6 @@ public class LightLevelController {
         vertexBuffer.drawWithShader(event.getMatrixStack().last().pose(), event.getProjectionMatrix(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
 
-        RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
         RenderSystem.enableCull();
         RenderSystem.enableTexture();

@@ -115,7 +115,7 @@ public class BeaconController {
         }*/
         // only for screenshots???
         Matrix4f matrix = new Matrix4f();
-        matrix.setPerspective((float)fov, (float)mc.getWindow().getWidth() / (float)mc.getWindow().getHeight(), 0.05F, ClipRange);
+        matrix.setPerspective((float)(fov * (double)((float)Math.PI / 180F)), (float)mc.getWindow().getWidth() / (float)mc.getWindow().getHeight(), 0.05F, ClipRange);
         posestack.last().pose().mul(matrix);
         return posestack.last().pose();
     }

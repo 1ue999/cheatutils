@@ -46,6 +46,7 @@ public class ModMain {
         register(EntityEspController.instance);
         register(EnderPearlPathController.instance);
         register(EndCityChunksController.instance);
+        register(EntityTagsController.instance);
     }
 
     private void register(Object instance) {

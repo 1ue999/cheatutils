@@ -1,6 +1,8 @@
 package com.zergatul.cheatutils.controllers;
 
+import com.zergatul.cheatutils.chunkoverlays.ExplorationMiniMapChunkOverlay;
 import net.minecraft.client.Minecraft;
+import org.slf4j.helpers.MessageFormatter;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -20,9 +22,15 @@ public class DebugScreenController {
         list.add("");
         list.add("Zergatul Cheat Utils");
         list.add("Loaded chunks: " + ChunkController.instance.getLoadedChunksCount());
-        list.add("Block scanning thread queue size: " + BlockFinderController.instance.getScanningQueueCount());
-        list.add("Block scanning thread load: " + format.format(BlockFinderController.instance.getScanningThreadLoadPercent()) + "%");
-        list.add("Horizontal speed: " + format.format(SpeedCounterController.instance.getHorizontalSpeed()));
+        list.add(String.format("BlockFinder scan thread: queue size=%s; load=%s; state=%s;",
+                    BlockFinderController.instance.getScanningQueueCount(),
+                    format.format(BlockFinderController.instance.getScanningThreadLoadPercent()) + "%",
+                    BlockFinderController.instance.getThreadState()));
+
+        ExplorationMiniMapChunkOverlay miniMapChunkOverlay = ChunkOverlayController.instance.ofType(ExplorationMiniMapChunkOverlay.class);
+        list.add(String.format("ExplMiniMap scan thread: queue size=%s; state=%s;",
+                miniMapChunkOverlay.getScanningQueueCount(),
+                miniMapChunkOverlay.getThreadState()));
 
         FreeCamController.instance.onDebugScreenGetGameInformation(list);
     }

@@ -25,11 +25,11 @@ public class KillAuraConfig implements ValidatableConfig {
     public KillAuraConfig() {
         active = false;
         maxRange = 6;
-        attackTickInterval = 1;
-        priorities = new ImmutableList<>();
-        priorities.add(PredefinedPriorityEntry.fromName("Enemies"));
-        priorities.add(PredefinedPriorityEntry.fromName("Shulker Bullets"));
-        priorities.add(PredefinedPriorityEntry.fromName("Fireballs"));
+        attackTickInterval = 5;
+        priorities = new ImmutableList<PriorityEntry>()
+                .add(PredefinedPriorityEntry.fromName("Enemies"))
+                .add(PredefinedPriorityEntry.fromName("Shulker Bullets"))
+                .add(PredefinedPriorityEntry.fromName("Fireballs"));
         customEntries = new ImmutableList<>();
     }
 
@@ -118,7 +118,7 @@ public class KillAuraConfig implements ValidatableConfig {
         public static CustomPriorityEntry create(String name, String description, String className) {
             Class<?> clazz;
             try {
-                clazz = Class.forName(className);
+                clazz = Class.forName(ClassRemapper.toObf(className));
             } catch (ClassNotFoundException e) {
                 return null;
             }

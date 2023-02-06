@@ -19,7 +19,7 @@ public class BoatHackConfig implements ValidatableConfig {
 
     @Override
     public void validate() {
-        friction = Math.min(Math.max(0.01f, friction), 0.99f);
+        friction = Math.min(Math.max(0.01f, friction), 1.5f);
         horizontalFlySpeed = MathUtils.clamp(horizontalFlySpeed, 0, 100);
         verticalFlySpeed = MathUtils.clamp(verticalFlySpeed, 0, 100);
     }
